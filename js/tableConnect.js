@@ -34,14 +34,16 @@ function push_to_table(datum) {
             });
         } else {
             details = `${datum['courseCode']}-${datum.sectionName}-${datum['faculties']}-${datum['roomName']}`;
-            // For regular classes, find the exact time slot
-            let timeSlot = getExactTimeSlot(time);
-            if (timeSlot) {
-                let cellId = getCellId(day, timeSlot);
+            // For regular classes, fill every standard slot the class time overlaps
+            // (a class can span more than one 80-minute period, e.g. 11:00 AM-1:50 PM)
+            let [startTime, endTime] = parseTimeRange(time);
+            let slots = getAffectedTimeSlots(startTime, endTime);
+            slots.forEach(slot => {
+                let cellId = getCellId(day, slot);
                 if (cellId) {
                     insertIntoCell(cellId, details);
                 }
-            }
+            });
         }
     }
 
@@ -286,4 +288,3 @@ function getScheduleHash(datum) {
 	datum['scheduleHash'] = hash
 	return hash
 }
-
