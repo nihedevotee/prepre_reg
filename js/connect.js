@@ -1,6 +1,135 @@
 // Storage key for localStorage
 const STORAGE_KEY = 'preprereg_saved_routine';
 
+// Convert "14:00:00" -> "2:00 pm"
+function formatTime12(time24) {
+    if (!time24) return '';
+    let [h, m] = time24.split(':');
+    let hour = parseInt(h, 10);
+    let meridian = hour >= 12 ? 'pm' : 'am';
+    if (hour > 12) hour -= 12;
+    else if (hour === 0) hour = 12;
+    return `${hour}:${m} ${meridian}`;
+}
+
+// "2026-07-25" -> "SATURDAY"
+function getWeekdayName(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+}
+
+// "2026-07-25" -> "25-07-2026"
+function formatDateDMY(dateStr) {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-');
+    return `${d}-${m}-${y}`;
+}
+
+// Renders one type's rows (already date-sorted) into a column as
+// day-grouped cards. Shows a small empty note if there are none.
+function renderExamColumn(containerEl, rows, typeClass) {
+    containerEl.innerHTML = '';
+
+    if (rows.length === 0) {
+        containerEl.innerHTML = '<p class="exam-column-empty">No exams scheduled</p>';
+        return;
+    }
+
+    let i = 0;
+    while (i < rows.length) {
+        let j = i;
+        while (j + 1 < rows.length && rows[j + 1].date === rows[i].date) {
+            j++;
+        }
+
+        const card = document.createElement('div');
+        card.classList.add('exam-day-card', typeClass);
+
+        const header = document.createElement('div');
+        header.classList.add('exam-day-header');
+        header.innerHTML = `
+            <span class="exam-day-weekday">${getWeekdayName(rows[i].date)}</span>
+            <span class="exam-day-date">${formatDateDMY(rows[i].date)}</span>
+        `;
+        card.appendChild(header);
+
+        for (let k = i; k <= j; k++) {
+            const row = rows[k];
+            const entry = document.createElement('div');
+            entry.classList.add('exam-entry');
+            entry.innerHTML = `
+                <span class="exam-course-badge">${row.course}</span>
+                <span class="exam-time">${formatTime12(row.start)} - ${formatTime12(row.end)}</span>
+            `;
+            card.appendChild(entry);
+        }
+
+        containerEl.appendChild(card);
+        i = j + 1;
+    }
+}
+
+// Rebuilds the Exam Schedule from the currently selected courses.
+// MID exams render in the left column, FINAL exams in the right column,
+// each as day-grouped cards (course badge + time range).
+// selectedElements: dlb.selected (array of <li> elements with data-id)
+function renderExamSchedule(selectedElements, data) {
+    const columns = document.getElementById('examScheduleColumns');
+    const midList = document.getElementById('examScheduleMidList');
+    const finalList = document.getElementById('examScheduleFinalList');
+    const emptyMsg = document.getElementById('examScheduleEmpty');
+    if (!columns || !midList || !finalList) return;
+
+    let rows = [];
+    selectedElements.forEach(elem => {
+        const dataIndex = elem.getAttribute('data-id');
+        const course_desc = data[dataIndex - 1]['desc'];
+        const sched = course_desc && course_desc.sectionSchedule;
+        if (!sched) return;
+
+        if (sched.midExamDate) {
+            rows.push({
+                date: sched.midExamDate,
+                start: sched.midExamStartTime,
+                end: sched.midExamEndTime,
+                type: 'MID',
+                course: course_desc.courseCode
+            });
+        }
+        if (sched.finalExamDate) {
+            rows.push({
+                date: sched.finalExamDate,
+                start: sched.finalExamStartTime,
+                end: sched.finalExamEndTime,
+                type: 'FINAL',
+                course: course_desc.courseCode
+            });
+        }
+    });
+
+    // sort chronologically by date, then start time
+    rows.sort((a, b) => {
+        const dateCompare = a.date.localeCompare(b.date);
+        if (dateCompare !== 0) return dateCompare;
+        return (a.start || '').localeCompare(b.start || '');
+    });
+
+    if (rows.length === 0) {
+        columns.style.display = 'none';
+        if (emptyMsg) emptyMsg.style.display = 'block';
+        return;
+    }
+
+    columns.style.display = 'flex';
+    if (emptyMsg) emptyMsg.style.display = 'none';
+
+    const midRows = rows.filter(r => r.type === 'MID');
+    const finalRows = rows.filter(r => r.type === 'FINAL');
+
+    renderExamColumn(midList, midRows, 'mid');
+    renderExamColumn(finalList, finalRows, 'final');
+}
+
 // Save selected section IDs to localStorage
 function saveRoutine(selectedCourses, data) {
     const sectionIds = selectedCourses
@@ -120,6 +249,7 @@ async function start() {
                 populateExamWarning(findDuplicateExamDays(course_and_exam));
                 info_populator("right", course_desc);
                 info_unpopulator("left");
+                renderExamSchedule(this.selected, data);
                 
                 // Auto-save after adding (skip during initial load)
                 if (!isLoadingRoutine) {
@@ -161,6 +291,7 @@ async function start() {
                 } else {
                     info_unpopulator("right");
                 }
+                renderExamSchedule(this.selected, data);
                 
                 // Auto-save after removing
                 saveRoutine(this.selected, data);
@@ -194,6 +325,7 @@ async function start() {
         
         // Save the routine again to clean up any invalid IDs
         saveRoutine(dlb.selected, data);
+        renderExamSchedule(dlb.selected, data);
     }
 
     // Click event handler
@@ -322,4 +454,3 @@ function refreshClashLint(data) {
 }
 	
 start();
-

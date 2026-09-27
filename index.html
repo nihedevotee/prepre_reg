@@ -21,6 +21,142 @@
         <script src="dual-list/dual-listbox.js"></script>
         <link href="dual-list/dual-listbox.css" rel="stylesheet" />
         <link href="./css/styles.css?v=4212121212121"  rel="stylesheet" />
+        <style>
+            .exam-schedule-section {
+                max-width: 900px;
+                margin: 36px auto;
+                padding: 0 14px;
+            }
+            .exam-schedule-heading {
+                color: #22d3ee;
+                text-align: center;
+                margin-bottom: 18px;
+                letter-spacing: 0.5px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+            }
+            /* left column = MID exams, right column = FINAL exams */
+            .exam-schedule-columns {
+                display: flex;
+                gap: 22px;
+                align-items: flex-start;
+            }
+            .exam-schedule-column {
+                flex: 1;
+                min-width: 0;
+            }
+            .exam-column-heading {
+                text-align: center;
+                font-size: 0.82rem;
+                font-weight: 800;
+                letter-spacing: 0.6px;
+                text-transform: uppercase;
+                margin: 0 0 12px;
+                padding-bottom: 8px;
+                border-bottom: 2px solid;
+            }
+            .exam-column-heading.mid {
+                color: #facc15;
+                border-color: rgba(250, 204, 21, 0.35);
+            }
+            .exam-column-heading.final {
+                color: #f87171;
+                border-color: rgba(248, 113, 113, 0.35);
+            }
+            .exam-schedule-list {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            /* one card per exam day, grouping every exam that falls on it */
+            .exam-day-card {
+                background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01));
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 14px;
+                overflow: hidden;
+                box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+            }
+            .exam-day-card.mid {
+                border-left: 3px solid rgba(250, 204, 21, 0.55);
+            }
+            .exam-day-card.final {
+                border-left: 3px solid rgba(248, 113, 113, 0.55);
+            }
+            .exam-day-header {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 10px;
+                padding: 10px 16px;
+                background: rgba(255, 255, 255, 0.045);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+            }
+            .exam-day-weekday {
+                color: #f8fafc;
+                font-weight: 700;
+                letter-spacing: 0.3px;
+                font-size: 0.85rem;
+            }
+            .exam-day-date {
+                color: #9ca3af;
+                font-size: 0.78rem;
+            }
+            .exam-entry {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 10px 16px;
+            }
+            .exam-entry + .exam-entry {
+                border-top: 1px dashed rgba(255, 255, 255, 0.07);
+            }
+            .exam-course-badge {
+                font-family: monospace;
+                font-weight: 700;
+                background: rgba(34, 211, 238, 0.12);
+                color: #22d3ee;
+                padding: 5px 10px;
+                border-radius: 6px;
+                font-size: 0.8rem;
+                white-space: nowrap;
+            }
+            .exam-time {
+                color: #e5e7eb;
+                font-size: 0.86rem;
+                flex: 1;
+                text-align: right;
+            }
+            .exam-column-empty {
+                text-align: center;
+                color: #6b7280;
+                font-style: italic;
+                font-size: 0.85rem;
+                padding: 16px 0;
+            }
+            .exam-schedule-empty {
+                text-align: center;
+                color: #9ca3af;
+                font-style: italic;
+            }
+            #downloadWrapper {
+                padding: 4px 0 20px;
+            }
+            @media (max-width: 640px) {
+                .exam-schedule-columns {
+                    flex-direction: column;
+                }
+                .exam-entry {
+                    flex-wrap: wrap;
+                }
+                .exam-time {
+                    flex-basis: 100%;
+                    text-align: left;
+                    order: 3;
+                }
+            }
+        </style>
         <title>PrePreReg</title>
     </head>
 
@@ -107,98 +243,116 @@
                 <h4>Total Credits: <span id="total_credit">0</span></h4>
             </div>
 
-            <div class="routine-table">
-                <table align='center' cellspacing=2 cellpadding=10 id="data_table" border=1>
-                    <tr>
-                        <th>Time/Day</th>
-                        <th>Sunday</th>
-                        <th>Monday</th>
-                        <th>Tuesday</th>
-                        <th>Wednesday</th>
-                        <th>Thursday</th>
-                        <th>Friday</th>
-                        <th>Saturday</th>
-                    </tr>
-                    
-                    <tr id="row1">
-                        <td><b>08:00 AM-09:20 AM</b></td>
-                        <td id="1-1"></td>
-                        <td id="1-2"></td>
-                        <td id="1-3"></td>
-                        <td id="1-4"></td>
-                        <td id="1-5"></td>
-                        <td id="1-6"></td>
-                        <td id="1-7"></td>
-                    <tr>
+            <div id="downloadWrapper">
+                <div class="routine-table">
+                    <table align='center' cellspacing=2 cellpadding=10 id="data_table" border=1>
+                        <tr>
+                            <th>Time/Day</th>
+                            <th>Sunday</th>
+                            <th>Monday</th>
+                            <th>Tuesday</th>
+                            <th>Wednesday</th>
+                            <th>Thursday</th>
+                            <th>Friday</th>
+                            <th>Saturday</th>
+                        </tr>
+                        
+                        <tr id="row1">
+                            <td><b>08:00 AM-09:20 AM</b></td>
+                            <td id="1-1"></td>
+                            <td id="1-2"></td>
+                            <td id="1-3"></td>
+                            <td id="1-4"></td>
+                            <td id="1-5"></td>
+                            <td id="1-6"></td>
+                            <td id="1-7"></td>
+                        <tr>
 
-                    <tr id="row2">
-                        <td><b>09:30 AM-10:50 AM</b></td>
-                        <td id="2-1"></td>
-                        <td id="2-2"></td>
-                        <td id="2-3"></td>
-                        <td id="2-4"></td>
-                        <td id="2-5"></td>
-                        <td id="2-6"></td>
-                        <td id="2-7"></td>
-                    </tr>
+                        <tr id="row2">
+                            <td><b>09:30 AM-10:50 AM</b></td>
+                            <td id="2-1"></td>
+                            <td id="2-2"></td>
+                            <td id="2-3"></td>
+                            <td id="2-4"></td>
+                            <td id="2-5"></td>
+                            <td id="2-6"></td>
+                            <td id="2-7"></td>
+                        </tr>
 
-                    <tr id="row3">
-                        <td><b>11:00 AM-12:20 PM</b></td>
-                        <td id="3-1"></td>
-                        <td id="3-2"></td>
-                        <td id="3-3"></td>
-                        <td id="3-4"></td>
-                        <td id="3-5"></td>
-                        <td id="3-6"></td>
-                        <td id="3-7"></td>
-                    </tr>
+                        <tr id="row3">
+                            <td><b>11:00 AM-12:20 PM</b></td>
+                            <td id="3-1"></td>
+                            <td id="3-2"></td>
+                            <td id="3-3"></td>
+                            <td id="3-4"></td>
+                            <td id="3-5"></td>
+                            <td id="3-6"></td>
+                            <td id="3-7"></td>
+                        </tr>
 
-                    <tr id="row4">
-                        <td><b>12:30 PM-01:50 PM</b></td>
-                        <td id="4-1"></td>
-                        <td id="4-2"></td>
-                        <td id="4-3"></td>
-                        <td id="4-4"></td>
-                        <td id="4-5"></td>
-                        <td id="4-6"></td>
-                        <td id="4-7"></td>
-                    </tr>
+                        <tr id="row4">
+                            <td><b>12:30 PM-01:50 PM</b></td>
+                            <td id="4-1"></td>
+                            <td id="4-2"></td>
+                            <td id="4-3"></td>
+                            <td id="4-4"></td>
+                            <td id="4-5"></td>
+                            <td id="4-6"></td>
+                            <td id="4-7"></td>
+                        </tr>
 
-                    <tr id="row5">
-                        <td><b>02:00 PM-03:20 PM</b></td>
-                        <td id="5-1"></td>
-                        <td id="5-2"></td>
-                        <td id="5-3"></td>
-                        <td id="5-4"></td>
-                        <td id="5-5"></td>
-                        <td id="5-6"></td>
-                        <td id="5-7"></td>
-                    </tr>
+                        <tr id="row5">
+                            <td><b>02:00 PM-03:20 PM</b></td>
+                            <td id="5-1"></td>
+                            <td id="5-2"></td>
+                            <td id="5-3"></td>
+                            <td id="5-4"></td>
+                            <td id="5-5"></td>
+                            <td id="5-6"></td>
+                            <td id="5-7"></td>
+                        </tr>
 
-                    <tr id="row6">
-                        <td><b>03:30 PM-04:50 PM</b></td>
-                        <td id="6-1"></td>
-                        <td id="6-2"></td>
-                        <td id="6-3"></td>
-                        <td id="6-4"></td>
-                        <td id="6-5"></td>
-                        <td id="6-6"></td>
-                        <td id="6-7"></td>
-                    </tr>
+                        <tr id="row6">
+                            <td><b>03:30 PM-04:50 PM</b></td>
+                            <td id="6-1"></td>
+                            <td id="6-2"></td>
+                            <td id="6-3"></td>
+                            <td id="6-4"></td>
+                            <td id="6-5"></td>
+                            <td id="6-6"></td>
+                            <td id="6-7"></td>
+                        </tr>
 
-                    <tr id="row7">
-                        <td><b>05:00 PM-06:20 PM</b></td>
-                        <td id="7-1"></td>
-                        <td id="7-2"></td>
-                        <td id="7-3"></td>
-                        <td id="7-4"></td>
-                        <td id="7-5"></td>
-                        <td id="7-6"></td>
-                        <td id="7-7"></td>
-                    </tr>
-                </table>
+                        <tr id="row7">
+                            <td><b>05:00 PM-06:20 PM</b></td>
+                            <td id="7-1"></td>
+                            <td id="7-2"></td>
+                            <td id="7-3"></td>
+                            <td id="7-4"></td>
+                            <td id="7-5"></td>
+                            <td id="7-6"></td>
+                            <td id="7-7"></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- exam schedule section: lists mid+final exams for every selected course -->
+                <div class="exam-schedule-section">
+                    <h4 class="exam-schedule-heading">📅 Exam Schedule</h4>
+                    <div id="examScheduleColumns" class="exam-schedule-columns" style="display:none;">
+                        <div class="exam-schedule-column">
+                            <h5 class="exam-column-heading mid">Midterms</h5>
+                            <div id="examScheduleMidList" class="exam-schedule-list"></div>
+                        </div>
+                        <div class="exam-schedule-column">
+                            <h5 class="exam-column-heading final">Finals</h5>
+                            <div id="examScheduleFinalList" class="exam-schedule-list"></div>
+                        </div>
+                    </div>
+                    <p id="examScheduleEmpty" class="exam-schedule-empty">Select some courses to see their exam schedule here.</p>
+                </div>
             </div>
-            <button id="downloadTable">Download the Routine</button>
+            <button id="downloadTable">Download the Routine and Exam Schedule</button>
         </div>
 
         <footer>
@@ -219,13 +373,16 @@
         <script>
             document.getElementById("downloadTable").addEventListener("click", () => {
 
+                const wrapper = document.getElementById("downloadWrapper");
+                wrapper.style.backgroundColor = "rgb(17 24 39)";
                 document.getElementById("data_table").style.backgroundColor = "rgb(17 24 39)"
-                html2canvas(document.getElementById("data_table")).then( (canvas) => {
+
+                html2canvas(wrapper).then( (canvas) => {
 
                     const base64image = canvas.toDataURL("image/png");
                     var dlLink = document.createElement('a');
                     dlLink.setAttribute("href", base64image);
-                    dlLink.setAttribute("download", "routine.png");
+                    dlLink.setAttribute("download", "routine-and-exam-schedule.png");
                     dlLink.click();
                     dlLink.remove();
                     
